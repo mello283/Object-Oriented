@@ -1,0 +1,128 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int node_id = 50;
+
+class FlashcardNode {
+public:
+    FlashcardNode(string question, string answer)
+        : question(question), answer(answer), left(nullptr), right(nullptr) {}
+    
+    int id;
+    string question;
+    string answer;
+    FlashcardNode* left;
+    FlashcardNode* right;
+};
+
+class FlashcardBST {
+public:
+    FlashcardBST() : root(nullptr) {}
+    
+    void insert(string question, string answer) {
+        root = insertRecursive(root, question, answer);
+    }
+    
+    void quiz() {
+        quizRecursive(root);
+    }
+    
+    void searchQuestion(string inputText) {
+        searchQuestion(root,inputText);
+    }
+    
+    FlashcardNode* searchQuestion(FlashcardNode* root, string key) {
+        // Base Cases: root is null or key is present at root
+        if (root == NULL || root->question == key) {
+            char userResponse = ' ';
+            if(root->question == key) {
+                cout<<"Found! Would you like to make changes? (y/n) ";
+                cin>>userResponse;
+            }
+            if(userResponse=='y') {
+                cout<<"input your changes ";
+                cin>>key;
+                root->question = key;
+                cout<<"\nChanges saved! Now put in the answer";
+                cin>>key;
+                root->answer = key;
+                cin.ignore();
+                cout<<"\nCard Saved!";
+                cin.ignore();
+                
+            }
+            userResponse = ' ';
+            return root;
+        }
+     
+        // Key is greater than root's key
+        if (root->question < key)
+            return searchQuestion(root->right, key);
+     
+        // Key is smaller than root's key
+        return searchQuestion(root->left, key);
+    }
+
+private:
+    FlashcardNode* root;
+    
+    FlashcardNode* insertRecursive(FlashcardNode* node, string question, string answer) {
+        
+        if (node == nullptr) {
+            return new FlashcardNode(question, answer);
+        }
+        
+        if (question < node->question) {
+            node->left = insertRecursive(node->left, question, answer);
+        } else {
+            node->right = insertRecursive(node->right, question, answer);
+        }
+        node_id++;
+        node->id=node_id;
+        return node;
+    }
+    
+    void quizRecursive(FlashcardNode* node) {
+        if (node == nullptr) {
+            return;
+        }
+        
+        string userAnswer;
+        cout << "Question: " << node->question << endl;
+        cout << "Your answer: ";
+        cin >> userAnswer;
+        
+        if (userAnswer == node->answer) {
+            cout << "Correct!" << endl;
+            node->id-=3;
+        } else {
+            cout << "Incorrect. The correct answer is: " << node->answer << endl;
+            node->id+=5;
+        }
+        
+        quizRecursive(node->left);
+        quizRecursive(node->right);
+    }
+
+};
+
+int main() {
+    FlashcardBST flashcards;
+
+    flashcards.insert("What is 2 + 2?", "4");
+    flashcards.insert("What is the capital of France?", "Paris");
+    flashcards.insert("What is the symbol for gold on the periodic table?", "Au");
+
+    cout << "Welcome to the Flashcard Quiz!" << endl;
+    cout << "Let's start the quiz:" << endl;
+    string inputText = "";
+
+    cout<<"input some text to search";
+    getline(cin,inputText);
+    flashcards.searchQuestion(inputText);
+    flashcards.quiz();
+
+    return 0;
+}

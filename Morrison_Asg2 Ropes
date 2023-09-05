@@ -1,0 +1,149 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class RopeNode {
+public:
+    string data;
+    RopeNode* left;
+    RopeNode* right;
+    int weight; // Number of characters in the subtree rooted at this node
+
+    RopeNode(const string& str) : data(str), left(nullptr), right(nullptr), weight(str.length()) {}
+};
+
+class Rope {
+private:
+    RopeNode* root;
+
+    // Helper function to split a rope into two parts at a given index
+    pair<RopeNode*, RopeNode*> split(RopeNode* node, int index) {
+        if (!node)
+            return {nullptr, nullptr};
+
+        if (index <= 0) {
+            return {nullptr, node};
+        } else if (index >= node->weight) {
+            return {node, nullptr};
+        } else if (index <= node->data.length()) {
+            // Split at the left part of the string
+            pair<RopeNode*, RopeNode*> split_result = split(node->left, index);
+            node->left = split_result.second;
+            updateWeight(node);
+            return {split_result.first, node};
+        } else {
+            // Split at the right part of the string
+            pair<RopeNode*, RopeNode*> split_result = split(node->right, index - node->data.length());
+            node->right = split_result.first;
+            updateWeight(node);
+            return {node, split_result.second};
+        }
+    }
+
+    // Helper function to concatenate two ropes
+    RopeNode* concatenate(RopeNode* left, RopeNode* right) {
+        if (!left) return right;
+        if (!right) return left;
+
+        int total_weight = left->weight + right->weight;
+
+        if (rand() % total_weight < left->weight) {
+            left->right = concatenate(left->right, right);
+            updateWeight(left);
+            return left;
+        } else {
+            right->left = concatenate(left, right->left);
+            updateWeight(right);
+            return right;
+        }
+    }
+
+    // Helper function to update the weight of a node based on its children
+    void updateWeight(RopeNode* node) {
+        node->weight = node->data.length();
+        if (node->left) node->weight += node->left->weight;
+        if (node->right) node->weight += node->right->weight;
+    }
+
+public:
+    Rope() : root(nullptr) {}
+
+    void insert(const string& str, int index) {
+        pair<RopeNode*, RopeNode*> split_result = split(root, index);
+        RopeNode* newNode = new RopeNode(str);
+        root = concatenate(split_result.first, newNode);
+        root = concatenate(root, split_result.second);
+    }
+
+    void deleteSubstring(int start, int length) {
+        pair<RopeNode*, RopeNode*> split1 = split(root, start);
+        pair<RopeNode*, RopeNode*> split2 = split(split1.second, length);
+        root = concatenate(split1.first, split2.second);
+    }
+
+    string getSubstring(int start, int length) {
+        pair<RopeNode*, RopeNode*> split1 = split(root, start);
+        pair<RopeNode*, RopeNode*> split2 = split(split1.second, length);
+        return split2.first->data;
+    }
+
+    void append(const string& str) {
+        RopeNode* newNode = new RopeNode(str);
+        root = concatenate(root, newNode);
+    }
+
+    void concatenateWith(Rope& other) {
+        root = concatenate(root, other.root);
+    }
+
+    void print() {
+        print(root);
+    }
+
+    void print(RopeNode* node) {
+        if (!node) return;
+        print(node->left);
+        cout << node->data;
+        print(node->right);
+    }
+};
+
+int main() {
+    Rope rope;
+    rope.insert("Hello, ", 0);
+    rope.insert("world!", 7);
+    rope.append("    ");
+    rope.print(); // Output: Hello, world!
+    
+    cout << endl;
+
+    rope.deleteSubstring(5, 2);
+    rope.print(); // Output: Hello world!
+
+    cout << endl;
+    
+    string sub = rope.getSubstring(0, 5);
+    cout << "Substring: " << sub << endl; // Output: Substring: Hello
+
+    cout << endl;
+
+    rope.append(" Welcome");
+    rope.print(); // Output: Hello Welcome world!
+
+    cout << endl;
+
+    Rope anotherRope;
+    anotherRope.insert("This is another rope.", 0);
+    rope.concatenateWith(anotherRope);
+    rope.print(); // Output: Hello Welcome world!This is another rope.
+    
+    return 0;
+}
+//references
+//basic structure copied from
+//https://www.geeksforgeeks.org/ropes-data-structure-fast-string-concatenation/
+
+//smart pointer researched at
+//https://en.cppreference.com/book/intro/smart_pointers
+//https://eyakubovich.github.io/2018-08-05-smart-pointers-in-function-arguments/
